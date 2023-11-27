@@ -95,7 +95,7 @@ class pynetsuite:
 		if run_async: headers['Prefer'] = 'respond-async'
 
 
-		req = urllib.request.Request(url, data=urllib.parse.urlencode(post_data).encode() if post_data else None, headers=headers, method=http_method)
+		req = urllib.request.Request(url, data=post_data, headers=headers, method=http_method)
 
 		try :
 			with urllib.request.urlopen(req) as response:
