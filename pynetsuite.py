@@ -1,5 +1,5 @@
 import json, urllib, random, math, time, base64, hmac, re
-from urllib import parsa
+from urllib import parse
 from urllib import request
 
 class pynetsuite:
