@@ -170,6 +170,29 @@ class pynetsuite:
 
 	def delete(self,path=None,data=None,run_async=False):
 		return self.rest('DELETE',path,{},data,run_async=run_async)
-	
+
 	def getJobStatus(self,jobid):
 		return self.rest('GET',path='/job',parameters={'jobid':jobid})
+
+	def ss(self,sql):
+		return self.Result(self.suiteql(sql))
+
+	class Result:
+		def __init__(self, data):
+			self.data = data
+
+		def json(self):
+			return self.data
+
+		def df(self):
+			import pandas as pd
+			return pd.DataFrame(self.data.get('items') or self.data.get('o:errorDetails')).drop(columns=['links'], errors='ignore')
+
+		def get(self,param):
+			return self.data.get(param)
+
+		def __repr__(self):
+			return repr(self.json())
+
+		def __call__(self):
+			return self.json()
