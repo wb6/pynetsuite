@@ -12,7 +12,7 @@ pip install git+https://github.com/wb6/pynetsuite
 
 import pynetsuite
 
-confg = {
+config = {
 	'netsuite_account':         '12345678-sb1',
     	'netsuite_consumer_key':    '123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234',
 	'netsuite_consumer_secret': '123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234',
@@ -41,3 +41,15 @@ ns.script('POST',parameters={'script':1501,'deploy':1},data={"test":1})
 
 
 ```
+
+### suiteql result as pandas dataframe
+
+if you have pandas installed you can get suiteql result as pandas dataframe
+
+```python
+
+ns.ss("SELECT TOP 2 * FROM transaction ORDER BY trandate DESC").df()
+
+```
+
+
