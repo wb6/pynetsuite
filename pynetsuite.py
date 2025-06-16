@@ -1,4 +1,6 @@
 import json, urllib, random, math, time, base64, hmac, re
+from urllib import parsa
+from urllib import request
 
 class pynetsuite:
 	def __init__(self,config):
