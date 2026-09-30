@@ -14,7 +14,7 @@ import pynetsuite
 
 config = {
 	'netsuite_account':         '12345678-sb1',
-    	'netsuite_consumer_key':    '123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234',
+    'netsuite_consumer_key':    '123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234',
 	'netsuite_consumer_secret': '123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234',
 	'netsuite_token_id':        '123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234',
 	'netsuite_token_secret':    '123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234',
