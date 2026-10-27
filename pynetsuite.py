@@ -1,6 +1,4 @@
 import json, urllib, random, math, time, base64, hmac, re
-from urllib import parse
-from urllib import request
 
 class pynetsuite:
 	def __init__(self,config):
@@ -85,6 +83,10 @@ class pynetsuite:
 		if http_method == 'POST' and data == None:
 			return data
 
+		if http_method == 'POST' and (type(data) is dict and len(data) == 1 and type(data.get('items')) is list) or (type(data) is list and len(data) > 1):
+			headers['content-type'] = 'application/vnd.oracle.resource+json; type=collection'
+			headers['Prefer'] = 'respond-async'
+
 		if type(data) is dict:
 			post_data = bytes(json.dumps(data),'utf-8')  
 		elif data == None:
@@ -161,7 +163,7 @@ class pynetsuite:
 	def get(self,path=None,parameters={},data=None):
 		return self.rest('GET',path,parameters,data)
 
-	def post(self,path=None,data=None,run_async=False):
+	def post(self,path=None,data=None,run_async=False,batch=False):
 		return self.rest('POST',path,{},data,run_async=run_async)
 
 	def patch(self,path=None,data=None,parameters={},run_async=False):
