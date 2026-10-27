@@ -1,17 +1,17 @@
-import json, urllib, random, math, time, base64, hmac, re
+import json, urllib, random, math, time, base64, hmac, re, os
+from urllib import parse, request
 
 class pynetsuite:
-	def __init__(self,config):
-		
-		self.config = config
-
+	def __init__(self,config={}):
 		self._version = '1.0'
 		self._signature_method = 'HMAC-SHA256'
-		self._netsuite_account = self.config['netsuite_account']
-		self._netsuite_consumer_key = self.config['netsuite_consumer_key']
-		self._netsuite_token_id = self.config['netsuite_token_id']
-		self._netsuite_consumer_secret = self.config['netsuite_consumer_secret']
-		self._netsuite_token_secret = self.config['netsuite_token_secret']
+		self._netsuite_account = os.getenv('NETSUITE_ACCOUNT') or config.get('netsuite_account')
+		if not self._netsuite_account:
+			raise ValueError("NETSUITE_ACCOUNT missing.")
+		self._netsuite_consumer_key = os.getenv('NETSUITE_CONSUMER_KEY') or config.get('netsuite_consumer_key','')
+		self._netsuite_token_id = os.getenv('NETSUITE_TOKEN_ID') or config.get('netsuite_token_id','')
+		self._netsuite_consumer_secret = os.getenv('NETSUITE_CONSUMER_SECRET') or config.get('netsuite_consumer_secret','')
+		self._netsuite_token_secret = os.getenv('NETSUITE_TOKEN_SECRET') or config.get('netsuite_token_secret','')
 		self._base_url = f"https://{self._netsuite_account}.suitetalk.api.netsuite.com/services/rest/record/v1"
 		self._base_url_suiteql = f"https://{self._netsuite_account}.suitetalk.api.netsuite.com/services/rest/query/v1"
 		self._base_url_script = f"https://{self._netsuite_account}.restlets.api.netsuite.com/app/site/hosting/restlet.nl"
@@ -42,10 +42,10 @@ class pynetsuite:
 		timestamp = math.floor(time.time())
 
 		oauth_params = {
-			"oauth_consumer_key" 	 	  : self._netsuite_consumer_key,
+			"oauth_consumer_key"			: self._netsuite_consumer_key,
 			"oauth_nonce" 	 			    : nonce,
-			"oauth_signature_method" 	: self._signature_method,
-			"oauth_timestamp" 	 		  : timestamp,
+			"oauth_signature_method"		: self._signature_method,
+			"oauth_timestamp"				: timestamp,
 			"oauth_token" 	 			    : self._netsuite_token_id,
 			"oauth_version" 	 		    : self._version,
 		}
@@ -123,7 +123,7 @@ class pynetsuite:
 
 		(url,headers) = self._sign(http_method='POST', path='/suiteql', parameters=parameters)
 
-		data = bytes( '{"q":"' + re.sub(r'\r?\n|\r|\t', " ",re.sub(r"\-\-.*","",q,re.M) ).strip() + '"}','utf-8')
+		data = bytes( '{"q":"' + re.sub(r'\r?\n|\r|\t', " ",re.sub(r"\-\-.*","",q,flags=re.M) ).strip() + '"}','utf-8')
 
 		req = urllib.request.Request(url,method='POST')
 		for header in headers:
@@ -131,17 +131,13 @@ class pynetsuite:
 		req.add_header('Prefer', 'transient')
 
 
-		try:
-			with urllib.request.urlopen(req,data=data) as f:
-				response = f.read().decode('utf-8')
-		except urllib.error.HTTPError as e :
-				response = e.fp.read()
-		except:
-			response = ''
-
-
-		if response == '':
-			return {}
+		with urllib.request.urlopen(req,data=data) as f:
+			response = f.read().decode('utf-8')
+		with urllib.request.urlopen(req, data=data) as f:
+			headers = f.headers
+			response = f.read().decode("utf-8") # May be empty
+			if response == '':
+				return headers
 
 		result = json.loads(response)
 
