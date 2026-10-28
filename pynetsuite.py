@@ -18,12 +18,6 @@ class pynetsuite:
 		self._base_url_job = f"https://{self._netsuite_account}.suitetalk.api.netsuite.com/services/rest/async/v1"
 		self._realm = self._netsuite_account.replace("-","_").upper()
 
-
-		print(1, self._netsuite_consumer_key )
-		print(2, self._netsuite_token_id )
-		print(3, self._netsuite_consumer_secret )
-		print(4, self._netsuite_token_secret )
-
 	def _sign(self, http_method, path='', parameters={}):
 		base_url = self._base_url
 		if(path == '/suiteql'): base_url = self._base_url_suiteql
