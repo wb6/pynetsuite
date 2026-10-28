@@ -80,7 +80,6 @@ class pynetsuite:
 
 		return (url,headers)
 
-
 	def rest(self, http_method='GET', path=None, parameters={}, data=None, run_async=False):
 
 		if path == None:
@@ -89,6 +88,9 @@ class pynetsuite:
 			return data
 
 		if type(data) is dict:
+			post_data = bytes(json.dumps(data),'utf-8')  
+		elif type(data) is list:
+			data = {'items': data }
 			post_data = bytes(json.dumps(data),'utf-8')  
 		elif data == None:
 			post_data = None
@@ -120,8 +122,6 @@ class pynetsuite:
 			return {}
 
 		return {}
-
-
 
 	def suiteql(self,q=None,parameters={}):
 		if q== None:
