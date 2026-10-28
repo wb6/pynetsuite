@@ -8,15 +8,21 @@ class pynetsuite:
 		self._netsuite_account = os.getenv('NETSUITE_ACCOUNT') or config.get('netsuite_account')
 		if not self._netsuite_account:
 			raise ValueError("NETSUITE_ACCOUNT missing.")
-		self._netsuite_consumer_key = os.getenv('NETSUITE_CONSUMER_KEY') or config.get('netsuite_consumer_key','')
-		self._netsuite_token_id = os.getenv('NETSUITE_TOKEN_ID') or config.get('netsuite_token_id','')
-		self._netsuite_consumer_secret = os.getenv('NETSUITE_CONSUMER_SECRET') or config.get('netsuite_consumer_secret','')
-		self._netsuite_token_secret = os.getenv('NETSUITE_TOKEN_SECRET') or config.get('netsuite_token_secret','')
+		self._netsuite_consumer_key = 		os.getenv('NETSUITE_CONSUMER_KEY') 		or config.get('netsuite_consumer_key','')
+		self._netsuite_token_id = 			os.getenv('NETSUITE_TOKEN_ID') 			or config.get('netsuite_token_id','')
+		self._netsuite_consumer_secret = 	os.getenv('NETSUITE_CONSUMER_SECRET') 	or config.get('netsuite_consumer_secret','')
+		self._netsuite_token_secret = 		os.getenv('NETSUITE_TOKEN_SECRET') 		or config.get('netsuite_token_secret','')
 		self._base_url = f"https://{self._netsuite_account}.suitetalk.api.netsuite.com/services/rest/record/v1"
 		self._base_url_suiteql = f"https://{self._netsuite_account}.suitetalk.api.netsuite.com/services/rest/query/v1"
 		self._base_url_script = f"https://{self._netsuite_account}.restlets.api.netsuite.com/app/site/hosting/restlet.nl"
 		self._base_url_job = f"https://{self._netsuite_account}.suitetalk.api.netsuite.com/services/rest/async/v1"
 		self._realm = self._netsuite_account.replace("-","_").upper()
+
+
+		print(1, self._netsuite_consumer_key )
+		print(2, self._netsuite_token_id )
+		print(3, self._netsuite_consumer_secret )
+		print(4, self._netsuite_token_secret )
 
 	def _sign(self, http_method, path='', parameters={}):
 		base_url = self._base_url
@@ -61,8 +67,12 @@ class pynetsuite:
 
 		# print(all_parameters_string)
 
-		base_string = http_method + '&' + urllib.parse.quote(base_url + path,  safe='') + "&" + urllib.parse.quote(all_parameters_string);
-		key = self._netsuite_consumer_secret + '&' + self._netsuite_token_secret
+		# base_string = http_method + '&' + urllib.parse.quote(base_url + path, safe='') + "&" + urllib.parse.quote(all_parameters_string)
+		base_string = (http_method + '&' + urllib.parse.quote(base_url + path, safe='') + '&' + urllib.parse.quote(all_parameters_string, safe='') )
+
+		# key = self._netsuite_consumer_secret + '&' + self._netsuite_token_secret
+		key = ( urllib.parse.quote(self._netsuite_consumer_secret, safe='') + '&'+ urllib.parse.quote(self._netsuite_token_secret, safe='') )
+
 		signature = urllib.parse.quote( base64.b64encode( (hmac.new(bytes(key,'utf-8'), bytes(base_string,'utf-8'), 'sha256').digest() )).decode() )
 
 		headers = {
@@ -76,16 +86,13 @@ class pynetsuite:
 
 		return (url,headers)
 
+
 	def rest(self, http_method='GET', path=None, parameters={}, data=None, run_async=False):
 
 		if path == None:
 			return path
 		if http_method == 'POST' and data == None:
 			return data
-
-		if http_method == 'POST' and (type(data) is dict and len(data) == 1 and type(data.get('items')) is list) or (type(data) is list and len(data) > 1):
-			headers['content-type'] = 'application/vnd.oracle.resource+json; type=collection'
-			headers['Prefer'] = 'respond-async'
 
 		if type(data) is dict:
 			post_data = bytes(json.dumps(data),'utf-8')  
@@ -95,9 +102,12 @@ class pynetsuite:
 			post_data = bytes(data,'utf-8')
 
 		(url,headers) = self._sign(http_method, path, parameters)
+
+		if http_method == 'POST' and ((type(data) is dict and len(data) == 1 and type(data.get('items')) is list) or (type(data) is list and len(data) > 1)):
+			headers['content-type'] = 'application/vnd.oracle.resource+json; type=collection'
+			headers['Prefer'] = 'respond-async'
 		
 		if run_async: headers['Prefer'] = 'respond-async'
-
 
 		req = urllib.request.Request(url, data=post_data, headers=headers, method=http_method)
 
@@ -117,6 +127,8 @@ class pynetsuite:
 
 		return {}
 
+
+
 	def suiteql(self,q=None,parameters={}):
 		if q== None:
 			return q
@@ -130,10 +142,7 @@ class pynetsuite:
 			req.add_header(header, headers[header])
 		req.add_header('Prefer', 'transient')
 
-
 		with urllib.request.urlopen(req,data=data) as f:
-			response = f.read().decode('utf-8')
-		with urllib.request.urlopen(req, data=data) as f:
 			headers = f.headers
 			response = f.read().decode("utf-8") # May be empty
 			if response == '':
@@ -141,7 +150,6 @@ class pynetsuite:
 
 		result = json.loads(response)
 
-		
 		if(result.get('hasMore') == True):
 			for link in result.get('links'):
 				if(link['rel'] == 'next'):
@@ -196,3 +204,4 @@ class pynetsuite:
 
 		def __call__(self):
 			return self.json()
+
