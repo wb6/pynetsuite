@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pynetsuite',
-    version='0.1',
+    version='0.1.1',
     py_modules=['pynetsuite'],
     description='Simple NetSuite class to interact with NetSuite REST API, SuiteQL, scripts.',
     long_description=open('README.md').read(),
