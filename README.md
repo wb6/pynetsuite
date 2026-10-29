@@ -6,11 +6,31 @@ Simple NetSuite class to interact with NetSuite REST API, SuiteQL, scripts
 pip install git+https://github.com/wb6/pynetsuite
 ```
 
-### for OAuth 2.0 Client Credentials (M2M)
+### OAuth 2.0 Client Credentials (M2M)
+
+#### install these two dependencies
 
 ```bash
 pip install PyJWT cryptography
 ```
+
+#### Generate certificates
+
+##### for RSA
+```bash
+openssl req -new -x509 -newkey rsa:4096 -sha256 -nodes -days 730 -keyout netsuite-private-key.pem -out netsuite-public-cert.pem
+
+```
+##### for ECS
+```bash
+openssl req -new -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -sha256 -days 730 -keyout netsuite-private-key.pem -out netsuite-public-cert.pem
+
+```
+
+##### NetSuite
+Create integration: ```https://YOUR_ACCOUNT_ID.app.netsuite.com/app/common/integration/integrapplist.nl```
+OAuth 2.0 Client Credentials Setup: ```https://YOUR_ACCOUNT_ID.app.netsuite.com/app/oauth2/clientcredentials/setup.nl```
+
 
 ## Usage
 
@@ -29,7 +49,7 @@ config = {
 
 	# or for OAuth 2.0 Client Credentials (M2M)
 	'netsuite_certificate_id':		'1234567890abcdef',
-	'netsuite_private_key_path':	'/path/to/netsuite/private/key.pem',
+	'netsuite_private_key_path':	'/path/to/netsuite-private-key.pem',
 }
 
 
