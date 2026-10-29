@@ -3,7 +3,7 @@ Simple NetSuite class to interact with NetSuite REST API, SuiteQL, scripts
 ## Install 
 
 ```bash
-pip install git+https://github.com/wb6/pynetsuite
+python3 -m pip install git+https://github.com/wb6/pynetsuite
 ```
 
 ### OAuth 2.0 Client Credentials (M2M)
@@ -11,7 +11,7 @@ pip install git+https://github.com/wb6/pynetsuite
 #### install these two dependencies
 
 ```bash
-pip install PyJWT cryptography
+python3 -m pip install PyJWT cryptography
 ```
 
 #### Generate certificates
