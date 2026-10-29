@@ -201,93 +201,76 @@ class pynetsuite:
 
 		return {}
 
+	def suiteql(self, q=None, parameters=None):
+		if q is None:
+			return None
 
-	def rest_old(self, http_method='GET', path=None, parameters={}, data=None, run_async=False):
+		if parameters is None:
+			parameters = {}
 
-		if path == None:
-			return path
-		if http_method == 'POST' and data == None:
-			return data
-
-		if type(data) is dict:
-			post_data = bytes(json.dumps(data),'utf-8')  
-		elif type(data) is list:
-			data = {'items': data }
-			post_data = bytes(json.dumps(data),'utf-8')  
-		elif data == None:
-			post_data = None
-		else:
-			post_data = bytes(data,'utf-8')
-
-		(url,headers) = self._sign(http_method, path, parameters)
-
-		if http_method == 'POST' and type(data) is dict and len(data) == 1 and type(data.get('items')) is list:
-			headers['content-type'] = 'application/vnd.oracle.resource+json; type=collection'
-			headers['Prefer'] = 'respond-async'
-		
-		if run_async: headers['Prefer'] = 'respond-async'
-
-		req = urllib.request.Request(url, data=post_data, headers=headers, method=http_method)
-
-		try :
-			with urllib.request.urlopen(req) as response:
-				response_body = response.read().decode('utf-8')
-
-				if len(response_body) == 0:
-					return {'Location': response.getheader('Location')}
-
-				return json.loads(response_body)
-		except urllib.error.HTTPError as e :
-				response = e.fp.read()
-				return json.loads(response)
-		except:
-			return {}
-
-		return {}
-
-	def suiteql(self,q=None,parameters={}):
-		if q== None:
-			return q
-
-		url=''
-		headers={}
+		processed_q = re.sub(
+			r'\r?\n|\r|\t',
+			' ',
+			re.sub(r'--.*', '', q, flags=re.M)
+		).strip()
 
 		if self.certificate_id != '' and self.private_key_path != '':
-			print("new auth")
-			base_url = self._base_url_suiteql
-			path='/suiteql'
-
-			url = base_url + path + "?" + urllib.parse.urlencode(parameters)
-			headers['Authorization'] = f"Bearer {self.access_token()}"
+			url = self._base_url_suiteql + '/suiteql'
+			if parameters:
+				url += '?' + urllib.parse.urlencode(parameters)
+			headers = {
+				'Authorization': f'Bearer {self.access_token()}'
+			}
 		else:
-			(url,headers) = self._sign(http_method='POST', path='/suiteql', parameters=parameters)
+			url, headers = self._sign(
+				http_method='POST',
+				path='/suiteql',
+				parameters=parameters
+			)
 
+		data = json.dumps({'q': processed_q}).encode('utf-8')
 
-		data = bytes( '{"q":"' + re.sub(r'\r?\n|\r|\t', " ",re.sub(r"\-\-.*","",q,flags=re.M) ).strip() + '"}','utf-8')
+		req = urllib.request.Request(url, data=data, method='POST')
+		for name, value in headers.items():
+			req.add_header(name, value)
 
-		req = urllib.request.Request(url,method='POST')
-		for header in headers:
-			req.add_header(header, headers[header])
-		req.add_header("Content-Type", "application/json")
+		req.add_header('Content-Type', 'application/json')
 		req.add_header('Prefer', 'transient')
 
-		with urllib.request.urlopen(req,data=data) as f:
-			headers = f.headers
-			response = f.read().decode("utf-8") # May be empty
-			if response == '':
-				return headers
+		try:
+			with urllib.request.urlopen(req) as response:
+				body = response.read().decode('utf-8')
+				if not body:
+					return response.headers
+				result = json.loads(body)
 
-		result = json.loads(response)
+		except urllib.error.HTTPError as e:
+			body = e.read().decode('utf-8', errors='replace')
+			try:
+				return json.loads(body)
+			except (json.JSONDecodeError, TypeError):
+				return {
+					'status': e.code,
+					'title': e.reason,
+					'detail': body,
+				}
 
-		if(result.get('hasMore') == True):
-			for link in result.get('links'):
-				if(link['rel'] == 'next'):
-					params = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(link['href']).query))
-			response_sub = self.suiteql(q=q,parameters=params)
-			if response_sub.get('items') is not None:
-				result['items'] +=  response_sub['items'] 
-						
-				
+		if result.get('hasMore') is True:
+			next_params = None
+			for link in result.get('links', []):
+				if link.get('rel') == 'next':
+					next_params = dict(
+						urllib.parse.parse_qsl(
+							urllib.parse.urlsplit(link['href']).query
+						)
+					)
+					break
+
+			if next_params is not None:
+				page = self.suiteql(q=q, parameters=next_params)
+				if page.get('items'):
+					result.setdefault('items', []).extend(page['items'])
+
 		return result
 
 	def script(self,http_method='GET',path='/script',parameters={},data=None):
