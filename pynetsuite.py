@@ -177,7 +177,7 @@ class pynetsuite:
 		else:
 			(url,headers) = self._sign(http_method, path, parameters)
 
-		if http_method == 'POST' and type(data) is dict and len(data) == 1 and type(data.get('items')) is list:
+		if http_method in ['POST','PATCH','DELETE'] and type(data) is dict and len(data) == 1 and type(data.get('items')) is list:
 			headers['content-type'] = 'application/vnd.oracle.resource+json; type=collection'
 			headers['Prefer'] = 'respond-async'
 		
